@@ -5,9 +5,34 @@ const int puzzle_size=8;
 //array dimensions
 const int dim=((puzzle_size)/2)-1;
 
+//Node struct has state and path_cost values
+struct Node{
+    int state[dim][dim];
+    int path_cost=0;
 
+};
+
+
+void set_states_equal(int& a[dim][dim], int b[dim][dim]){
+    for( int i=0; i<dim; i++){
+        for(int j=0; j<dim; j++){
+            a[i][j]=b[i][j];
+        }
+    }
+    return;
+}
 
 void UniformCostSearch(int puzzle[dim][dim]){
+    Node initial_state;
+    set_states_equal(initial_state.state,puzzle);
+}
+
+void general_search(int puzzle[dim][dim], int alg_choice){
+    switch(alg_choice){
+        case 1:
+            UniformCostSearch(puzzle);
+            break;
+    };
 
     return;
 }
@@ -54,11 +79,9 @@ int main(){
                "3.\tA* with the Manhattan distance heuristic.";
         cin>>alg_choice;
 
-        switch(alg_choice) {
-            case 1:
-                UniformCostSearch(puzzleinput);
-                break;
-        };
+
+        //general_search call with algorithm choice passed in
+        general_search(puzzleinput,alg_choice);
 
 
     }
