@@ -1,4 +1,5 @@
 #include <iostream>
+#include <queue>
 using namespace std;
 //change this value to make this work for a puzzle of different size
 const int puzzle_size=8;
@@ -9,22 +10,57 @@ const int dim=((puzzle_size)/2)-1;
 struct Node{
     int state[dim][dim];
     int path_cost=0;
+    //Add comparator to enable priority queue sorting by path_cost
+    bool operator()(const Node& a, const Node& b)const {
+        return a.path_cost<b.path_cost;
+    }
+
 
 };
 
-
-void set_states_equal(int& a[dim][dim], int b[dim][dim]){
+void setStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             a[i][j]=b[i][j];
         }
     }
+
     return;
 }
 
-void UniformCostSearch(int puzzle[dim][dim]){
+void setNodesEqual(Node &a, Node b){
+    setStatesEqual(a.state,b.state);
+    a.path_cost=b.path_cost;
+
+    return;
+}
+
+
+
+void UniformCostSearch(int (puzzle)[dim][dim]){
     Node initial_state;
-    set_states_equal(initial_state.state,puzzle);
+    priority_queue<Node> frontier;
+    //Add initial_state to frontier priority queue
+    frontier.push(initial_state);
+
+    //set initial Node state to the puzzle
+    setStatesEqual(initial_state.state,puzzle);
+
+
+    do {
+        //Lowest cost Node
+        Node n=frontier.top();
+        frontier.pop();
+    }
+    while(!frontier.empty());
+    if(frontier.empty()){
+        cerr << "FAILURE!" << endl;
+        return;
+    }
+
+
+
+
 }
 
 void general_search(int puzzle[dim][dim], int alg_choice){
