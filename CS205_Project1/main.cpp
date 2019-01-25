@@ -7,6 +7,18 @@ const int puzzle_size=8;
 //array dimensions
 const int dim=((puzzle_size)/2)-1;
 
+bool checkStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
+    for( int i=0; i<dim; i++){
+        for(int j=0; j<dim; j++){
+            if(a[i][j]!=b[i][j]){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 //Node struct has state and path_cost values
 struct Node{
     int state[dim][dim];
@@ -19,7 +31,15 @@ struct Node{
     }
 
     bool operator==(const Node& b)const {
-        return this->state==b.state;
+        for( int i=0; i<dim; i++){
+            for(int j=0; j<dim; j++){
+                if(this->state[i][j]!=b.state[i][j]){
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
 
@@ -41,17 +61,6 @@ pair<int,int> setStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
     return pos_blank;
 }
 
-bool checkStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
-    for( int i=0; i<dim; i++){
-        for(int j=0; j<dim; j++){
-            if(a[i][j]!=b[i][j]){
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
 
 void setNodesEqual(Node &a, Node b){
     setStatesEqual(a.state,b.state);
@@ -149,6 +158,7 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
     //set<int[dim][dim]> explored;
     set<Node> explored;
     set<Node> front_copy;
+    int count=0;
 
     //set initial Node state to the puzzle
     pair<int,int> pblank = setStatesEqual(initial_state.state,puzzle);
@@ -177,7 +187,10 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         }
         //otherwise, add the state to those that have been explored
         explored.insert(n);
-        printState(n.state,"Expanding state: ");
+        if(count<10) {
+            printState(n.state, "Expanding state: ");
+            count++;
+        }
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
