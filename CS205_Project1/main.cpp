@@ -60,6 +60,21 @@ void setNodesEqual(Node &a, Node b){
     return;
 }
 
+void printState(int a[dim][dim], string message){
+    string space="";
+    cout << message << endl;
+    for( int i=0; i<dim; i++){
+        space="";
+        for(int j=0; j<dim; j++){
+            cout << space << a[i][j];
+            space= " ";
+        }
+        cout <<endl;
+    }
+    cout << endl;
+    return;
+}
+
 //this function returns the neighbor of the state passed in with the blank moved
 Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int path_cost){
     int temp[dim][dim];
@@ -162,6 +177,7 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         }
         //otherwise, add the state to those that have been explored
         explored.insert(n);
+        printState(n.state,"Expanding state: ");
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
