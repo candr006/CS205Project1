@@ -18,6 +18,10 @@ struct Node{
         return this->path_cost<b.path_cost;
     }
 
+    bool operator==(const Node& b)const {
+        return this->state==b.state;
+    }
+
 
 };
 
@@ -57,32 +61,43 @@ void setNodesEqual(Node &a, Node b){
 }
 
 //this function returns the neighbor of the state passed in with the blank moved
-Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos){
+Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int path_cost){
     int temp[dim][dim];
     Node n;
-   /* if(movement=="up"){
-        temp=a[(b_pos.first)-1][b_pos.second];
-       Node n;
-       pair<int,int> bpos= setStatesEqual(n.state,temp);
+    pair<int,int> bpos= setStatesEqual(temp,a);
+    if(movement=="up"){
+       temp[(bpos.first)][bpos.second]=a[(bpos.first)-1][bpos.second];
+       temp[(bpos.first)-1][bpos.second]=0;
+       bpos= setStatesEqual(n.state,temp);
+       n.pos_blank=bpos;
+       n.path_cost=path_cost+1;
+       return n;
+
     }
     else if(movement=="down"){
-        temp=a[(b_pos.first)+1][b_pos.second];
-        a[b_pos.first][b_pos.second]=temp;
-        a[(b_pos.first)+1][b_pos.second]=0;
+        temp[(bpos.first)][bpos.second]=a[(bpos.first)+1][bpos.second];
+        temp[(bpos.first)+1][bpos.second]=0;
+        bpos= setStatesEqual(n.state,temp);
+        n.pos_blank=bpos;
+        n.path_cost=path_cost+1;
+        return n;
     }
     else if(movement=="right"){
-        temp=a[(b_pos.first)][b_pos.second+1];
-        a[b_pos.first][b_pos.second]=temp;
-        a[(b_pos.first)][b_pos.second+1]=0;
-
+        temp[(bpos.first)][bpos.second]=a[(bpos.first)][(bpos.second)+1];
+        temp[(bpos.first)][(bpos.second)+1]=0;
+        bpos= setStatesEqual(n.state,temp);
+        n.pos_blank=bpos;
+        n.path_cost=path_cost+1;
+        return n;
     }
     else if(movement=="left"){
-        temp=a[(b_pos.first)][b_pos.second-1];
-        a[b_pos.first][b_pos.second]=temp;
-        a[(b_pos.first)][b_pos.second-1]=0;
-    }*/
-
-
+        temp[(bpos.first)][bpos.second]=a[(bpos.first)][(bpos.second)-1];
+        temp[(bpos.first)][(bpos.second)-1]=0;
+        bpos= setStatesEqual(n.state,temp);
+        n.pos_blank=bpos;
+        n.path_cost=path_cost+1;
+        return n;
+    }
     return n;
 }
 
@@ -92,33 +107,23 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos){
 vector<Node> getNeighbors(Node n){
     vector<Node> neighbors;
 
-    if(n.pos_blank.first>0){
+    if(n.pos_blank.first>0) {
         //move blank up possible
-        neighbors.push_back(gen_neighbor("up", n.state, n.pos_blank));
+        neighbors.push_back(gen_neighbor("up", n.state, n.pos_blank, n.path_cost));
+    }
+    if(n.pos_blank.first<dim) {
+        //move down up possible
+        neighbors.push_back(gen_neighbor("down", n.state, n.pos_blank, n.path_cost));
+    }
 
-
-
-/*
-        neighbor_temp.parent=&current;
-
-
-        //if the node is not already in the open set, push it onto it
-        found_iter=found(open, neighbor_temp);
-        if(!found_iter.first){
-            //Assign f_val
-            if(choice==1)
-                neighbor_temp.f_val=neighbor_temp.g_val;
-            else if(choice==2){
-                neighbor_temp.f_val=neighbor_temp.g_val+misplaced_tiles(neighbor_temp.state);
-            }
-            else if(choice==3){
-                neighbor_temp.f_val=neighbor_temp.g_val+manhattan_heuristic(neighbor_temp.state);
-            }
-            open.push_back(neighbor_temp);
-*/
-        }
-
-
+    if(n.pos_blank.second>0) {
+        //move left up possible
+        neighbors.push_back(gen_neighbor("left", n.state, n.pos_blank, n.path_cost));
+    }
+    if(n.pos_blank.second<dim) {
+        //move right up possible
+        neighbors.push_back(gen_neighbor("right", n.state, n.pos_blank, n.path_cost));
+    }
 
         return neighbors;
 }
@@ -128,6 +133,7 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
     priority_queue<Node> frontier;
     //set<int[dim][dim]> explored;
     set<Node> explored;
+    set<Node> front_copy;
 
     //set initial Node state to the puzzle
     pair<int,int> pblank = setStatesEqual(initial_state.state,puzzle);
@@ -135,12 +141,19 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
 
     //Add initial_state to frontier priority queue
     frontier.push(initial_state);
+    front_copy.insert(initial_state);
 
 
     do {
         //Lowest cost Node
-        Node n=frontier.top();
-        frontier.pop();
+        Node n;
+        set<Node, std::less<Node>, std::allocator<Node>>::iterator it;
+        do {
+            n = frontier.top();
+            frontier.pop();
+            it = front_copy.find(n);
+            front_copy.erase(it);
+        }while(explored.find(n)!=explored.end());
 
         //if the state that was popped is equal to the goal state, then we are done
         if(checkStatesEqual(n.state,goal)){
@@ -152,6 +165,21 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
+        vector<Node>neighbors=getNeighbors(n);
+        for(int i=0; i<neighbors.size(); i++){
+            it = front_copy.find(neighbors[i]);
+            if((explored.find(neighbors[i])==explored.end()) && (it==front_copy.end())){
+                frontier.push(neighbors[i]);
+                front_copy.insert(neighbors[i]);
+            }else if((it!=front_copy.end())){
+                Node n=(*it);
+                if(n.path_cost>neighbors[i].path_cost){
+                    frontier.push(neighbors[i]);
+                    front_copy.erase(n);
+                    front_copy.insert(neighbors[i]);
+                }
+            }
+        }
     }
     while(!frontier.empty());
     if(frontier.empty()){
