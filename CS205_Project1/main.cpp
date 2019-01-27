@@ -7,7 +7,7 @@ const int puzzle_size=8;
 //array dimensions
 const int dim=((puzzle_size)/2)-1;
 
-bool checkStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
+bool checkStatesEqual(int (a)[3][3], int (b)[3][3]){
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if(a[i][j]!=b[i][j]){
@@ -84,6 +84,29 @@ void printState(int a[dim][dim], string message){
     return;
 }
 
+bool existsInSet(set<Node> a, Node n){
+    set<Node>::iterator it;
+    for(it=a.begin(); it!=a.end(); it++){
+        Node b=(*it);
+        if(checkStatesEqual(b.state,n.state)){
+            return true;
+        }
+    }
+    return false;
+}
+
+Node getNode(set<Node> a, Node n){
+    set<Node>::iterator it;
+    for(it=a.begin(); it!=a.end(); it++){
+        Node b=(*it);
+        if(checkStatesEqual(b.state,n.state)){
+            return b;
+        }
+    }
+    Node t;
+    return t;
+}
+
 //this function returns the neighbor of the state passed in with the blank moved
 Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int path_cost){
     int temp[dim][dim];
@@ -130,25 +153,39 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
 //only legal moves are considered
 vector<Node> getNeighbors(Node n){
     vector<Node> neighbors;
-
+    //printState(n.state," Parent:");
     if(n.pos_blank.first>0) {
         //move blank up possible
-        neighbors.push_back(gen_neighbor("up", n.state, n.pos_blank, n.path_cost));
+       // cout <<"Move up" <<endl;
+        Node neighbor=gen_neighbor("up", n.state, n.pos_blank, n.path_cost);
+        neighbors.push_back(neighbor);
+        //printState(neighbor.state, "Neighbor up");
     }
-    if(n.pos_blank.first<dim) {
+    if(n.pos_blank.first<(dim-1)) {
         //move down up possible
-        neighbors.push_back(gen_neighbor("down", n.state, n.pos_blank, n.path_cost));
+        //cout <<"Move down" <<endl;
+        Node neighbor=gen_neighbor("down", n.state, n.pos_blank, n.path_cost);
+        neighbors.push_back(neighbor);
+       // printState(neighbor.state, "Neighbor down");
     }
 
     if(n.pos_blank.second>0) {
         //move left up possible
-        neighbors.push_back(gen_neighbor("left", n.state, n.pos_blank, n.path_cost));
+        Node neighbor=gen_neighbor("left", n.state, n.pos_blank, n.path_cost);
+        neighbors.push_back(neighbor);
+        //printState(neighbor.state, "Neighbor left");
     }
-    if(n.pos_blank.second<dim) {
+    if(n.pos_blank.second<(dim-1)) {
         //move right up possible
-        neighbors.push_back(gen_neighbor("right", n.state, n.pos_blank, n.path_cost));
+        Node neighbor=gen_neighbor("right", n.state, n.pos_blank, n.path_cost);
+        neighbors.push_back(neighbor);
+       // printState(neighbor.state, "Neighbor right");
     }
 
+
+    /*for (int i=0; i<neighbors.size(); i++){
+        printState(neighbors[i].state," Neighbor ");
+    }*/
         return neighbors;
 }
 
@@ -178,18 +215,32 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
             frontier.pop();
             it = front_copy.find(n);
             front_copy.erase(it);
-        }while(explored.find(n)!=explored.end());
+        }while(existsInSet(explored,n));
 
         //if the state that was popped is equal to the goal state, then we are done
         if(checkStatesEqual(n.state,goal)){
-            cout<< "Solution Found" << endl;
+            cout<< "Solution Found in " << count<< " steps" << endl;
             return;
         }
         //otherwise, add the state to those that have been explored
         explored.insert(n);
-        if(count<10) {
-            printState(n.state, "Expanding state: ");
-            count++;
+        count++;
+        /*if(count<2000) {
+           printState(n.state, "Expanding state: ");
+           count++;
+        }else{
+            return;
+        }*/
+        cout << "Step " << count << endl;
+        if (count==30){
+            if(front_copy.empty()) {
+                cout << "front copy empty " << endl;
+            }
+            set<Node>::iterator it2;
+            for(it2=front_copy.begin(); it2!=front_copy.end(); it2++){
+                Node b=(*it2);
+                printState(b.state, "node: ");
+            }
         }
 
         //find all neighbors of current state, n (max 4)
@@ -197,18 +248,20 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         vector<Node>neighbors=getNeighbors(n);
         for(int i=0; i<neighbors.size(); i++){
             it = front_copy.find(neighbors[i]);
-            if((explored.find(neighbors[i])==explored.end()) && (it==front_copy.end())){
+            if((!existsInSet(explored,neighbors[i])) && (!existsInSet(front_copy,neighbors[i]))){
                 frontier.push(neighbors[i]);
                 front_copy.insert(neighbors[i]);
-            }else if((it!=front_copy.end())){
-                Node n=(*it);
-                if(n.path_cost>neighbors[i].path_cost){
+            }
+            if(existsInSet(front_copy,neighbors[i])){
+                Node t=getNode(front_copy,neighbors[i]);
+                if(t.path_cost>neighbors[i].path_cost){
                     frontier.push(neighbors[i]);
-                    front_copy.erase(n);
+                    front_copy.erase(t);
                     front_copy.insert(neighbors[i]);
                 }
             }
         }
+
     }
     while(!frontier.empty());
     if(frontier.empty()){
