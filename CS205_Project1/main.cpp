@@ -7,6 +7,12 @@ const int puzzle_size=8;
 //array dimensions
 const int dim=((puzzle_size)/2)-1;
 
+int debugnode[dim][dim]={
+        {1,2,3},
+        {5,6,8},
+        {4,7,0}
+};
+
 bool checkStatesEqual(int (a)[3][3], int (b)[3][3]){
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
@@ -27,7 +33,7 @@ struct Node{
     pair<int,int> pos_blank;
     //Add comparator to enable priority queue sorting by path_cost
     bool operator<(const Node& b)const {
-        return this->path_cost<b.path_cost;
+        return this->path_cost>b.path_cost;
     }
 
     bool operator==(const Node& b)const {
@@ -108,6 +114,20 @@ Node getNode(set<Node> a, Node n, bool delete_it=false){
     }
     Node t;
     return t;
+}
+
+priority_queue<Node> deleteFromQueue(priority_queue<Node> a, Node n){
+    priority_queue<Node> b;
+
+    while(!a.empty()){
+        Node t=a.top();
+        a.pop();
+        if(!checkStatesEqual(t.state,n.state)){
+            b.push(t);
+        }
+    }
+
+    return b;
 }
 
 //this function returns the neighbor of the state passed in with the blank moved
@@ -217,7 +237,8 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         //otherwise, add the state to those that have been explored
         explored.insert(n);
         count++;
-        printState(n.state,"Step "+to_string(count)+" expanding: ");
+        //printState(n.state,"Step "+to_string(count)+" expanding: ");
+        //cout << "with path cost: "<< n.path_cost << endl;
 
 
         //find all neighbors of current state, n (max 4)
@@ -225,18 +246,56 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         vector<Node>neighbors=getNeighbors(n);
         for(int i=0; i<neighbors.size(); i++){
             it = front_copy.find(neighbors[i]);
+            bool thisisdn=checkStatesEqual(neighbors[i].state,debugnode);
+            if(thisisdn){
+                set<Node>::iterator it2;
+                for(it2=front_copy.begin(); it2!=front_copy.end();it2++){
+                    Node temp=(*it2);
+                    cout << "------------------------"<<endl;
+                    printState(temp.state,"front node: ");
+                }
+            }
             if((!existsInSet(explored,neighbors[i])) && (!existsInSet(front_copy,neighbors[i]))){
+                if(thisisdn){
+                    cout << "first if" <<endl;
+
+                printState(neighbors[i].state,"Added to frontier: ");
+                }
                 frontier.push(neighbors[i]);
                 front_copy.insert(neighbors[i]);
+
+                if(thisisdn) {
+                    if (existsInSet(front_copy, neighbors[i])) {
+                        cout << "Truly added to frontier" << endl;
+                    }
+                }
             }
-            if(existsInSet(front_copy,neighbors[i])){
+            if(existsInSet(front_copy,neighbors[i]) && (!existsInSet(explored,neighbors[i]))){
+                if(thisisdn){
+                    cout << "second if" <<endl;
+                }
                 Node t=getNode(front_copy,neighbors[i]);
                 if(t.path_cost>neighbors[i].path_cost){
+                    if(thisisdn){
+                        cout << "third if" <<endl;
+                    }
+                    frontier=deleteFromQueue(frontier,t);
                     frontier.push(neighbors[i]);
-                    front_copy.erase(t);
+                    Node t=getNode(front_copy,t,true);
                     front_copy.insert(neighbors[i]);
                 }
             }
+
+
+            if(thisisdn){
+                set<Node>::iterator it2;
+                for(it2=front_copy.begin(); it2!=front_copy.end();it2++){
+                    Node temp=(*it2);
+                    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<endl;
+                    printState(temp.state,"front node2: ");
+                }
+            }
+
         }
 
     }
