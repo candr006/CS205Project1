@@ -233,59 +233,24 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         explored.push_back(n);
         count++;
         printState(n.state,"Step "+to_string(count)+" expanding with Path Cost "+to_string(n.path_cost));
-        //cout << "with path cost: "<< n.path_cost << endl;
-
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
         vector<Node>neighbors=getNeighbors(n);
         for(int i=0; i<neighbors.size(); i++){
-            //it = front_copy.find(neighbors[i]);
-            bool thisisdn=checkStatesEqual(neighbors[i].state,debugnode);
-            /*if(thisisdn){
-                for(int i=0;front_copy.size(); i++){
-                    Node temp=front_copy[i];
-                    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<endl;
-                    printState(temp.state,"front node2: ");
-                }
-            }*/
+
             if((!existsInVect(explored,neighbors[i])) && (!existsInVect(front_copy,neighbors[i]))){
                 frontier.push(neighbors[i]);
-               /* if(thisisdn){
-                    cout << "first if" <<endl;
-
-                    printState(neighbors[i].state,"Added to frontier: ");
-
-                    if (existsInVect(front_copy, neighbors[i])) {
-                        cout << "Truly added to frontier" << endl;
-                    }
-                }*/
             }
             if(existsInVect(front_copy,neighbors[i]) && (!existsInVect(explored,neighbors[i]))){
-                /*if(thisisdn){
-                    cout << "second if" <<endl;
-                }*/
                 Node t=getNode(front_copy,neighbors[i]);
                 if(t.path_cost>neighbors[i].path_cost){
-                    /*if(thisisdn){
-                        cout << "third if" <<endl;
-                    }*/
                     frontier=deleteFromQueue(frontier,t);
                     frontier.push(neighbors[i]);
                     Node t=getNode(front_copy,t,true);
                     front_copy.push_back(neighbors[i]);
                 }
             }
-
-
-            /*if(thisisdn){
-                for(int i=0;front_copy.size(); i++){
-                    Node temp=front_copy[i];
-                    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<endl;
-                    printState(temp.state,"front node2: ");
-                }
-            }*/
-
         }
 
     }
