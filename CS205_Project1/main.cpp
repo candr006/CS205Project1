@@ -95,11 +95,14 @@ bool existsInSet(set<Node> a, Node n){
     return false;
 }
 
-Node getNode(set<Node> a, Node n){
+Node getNode(set<Node> a, Node n, bool delete_it=false){
     set<Node>::iterator it;
     for(it=a.begin(); it!=a.end(); it++){
         Node b=(*it);
         if(checkStatesEqual(b.state,n.state)){
+            if(delete_it){
+                a.erase(it);
+            }
             return b;
         }
     }
@@ -156,36 +159,25 @@ vector<Node> getNeighbors(Node n){
     //printState(n.state," Parent:");
     if(n.pos_blank.first>0) {
         //move blank up possible
-       // cout <<"Move up" <<endl;
         Node neighbor=gen_neighbor("up", n.state, n.pos_blank, n.path_cost);
         neighbors.push_back(neighbor);
-        //printState(neighbor.state, "Neighbor up");
     }
     if(n.pos_blank.first<(dim-1)) {
         //move down up possible
-        //cout <<"Move down" <<endl;
         Node neighbor=gen_neighbor("down", n.state, n.pos_blank, n.path_cost);
         neighbors.push_back(neighbor);
-       // printState(neighbor.state, "Neighbor down");
     }
 
     if(n.pos_blank.second>0) {
         //move left up possible
         Node neighbor=gen_neighbor("left", n.state, n.pos_blank, n.path_cost);
         neighbors.push_back(neighbor);
-        //printState(neighbor.state, "Neighbor left");
     }
     if(n.pos_blank.second<(dim-1)) {
         //move right up possible
         Node neighbor=gen_neighbor("right", n.state, n.pos_blank, n.path_cost);
         neighbors.push_back(neighbor);
-       // printState(neighbor.state, "Neighbor right");
     }
-
-
-    /*for (int i=0; i<neighbors.size(); i++){
-        printState(neighbors[i].state," Neighbor ");
-    }*/
         return neighbors;
 }
 
@@ -213,35 +205,20 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         do {
             n = frontier.top();
             frontier.pop();
-            it = front_copy.find(n);
-            front_copy.erase(it);
+            getNode(front_copy,n,true);
         }while(existsInSet(explored,n));
 
         //if the state that was popped is equal to the goal state, then we are done
         if(checkStatesEqual(n.state,goal)){
+            printState(goal,"Solution: ");
             cout<< "Solution Found in " << count<< " steps" << endl;
             return;
         }
         //otherwise, add the state to those that have been explored
         explored.insert(n);
         count++;
-        /*if(count<2000) {
-           printState(n.state, "Expanding state: ");
-           count++;
-        }else{
-            return;
-        }*/
-        cout << "Step " << count << endl;
-        if (count==30){
-            if(front_copy.empty()) {
-                cout << "front copy empty " << endl;
-            }
-            set<Node>::iterator it2;
-            for(it2=front_copy.begin(); it2!=front_copy.end(); it2++){
-                Node b=(*it2);
-                printState(b.state, "node: ");
-            }
-        }
+        printState(n.state,"Step "+to_string(count)+" expanding: ");
+
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
