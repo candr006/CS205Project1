@@ -8,14 +8,15 @@ const int puzzle_size=8;
 const int dim=((puzzle_size)/2)-1;
 int alg_choice=0;
 int goal[dim][dim];
+pair<int,int> goal_pos[(dim*dim)];
 
-int debugnode[dim][dim]={
+int default_puzzle[dim][dim]={
         {1,2,3},
         {5,6,8},
         {4,7,0}
 };
 
-bool checkStatesEqual(int (a)[3][3], int (b)[3][3]){
+bool checkStatesEqual(int (a)[dim][dim], int (b)[dim][dim]){
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if(a[i][j]!=b[i][j]){
@@ -145,18 +146,30 @@ int getMisplacedTiles(int a[dim][dim]){
 }
 
 int getManhattanDistance(int a[dim][dim]){
-    int h=0;
-
-    for( int i=0; i<dim; i++){
+    int val;
+    int i_cor;
+    int j_cor;
+    int x=0;
+    int y=0;
+    for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
-            if(a[i][j]!=goal[i][j]){
-                h++;
-            }
+
+            val=a[i][j];
+            //store the correct i and j positions of the value
+            i_cor=goal_pos[val].first;
+            j_cor=goal_pos[val].second;
+            //calculate the difference between the correct values of i, j and the the current positions of the values
+            if(i_cor!=i)
+                x+= abs(i_cor-i);
+            if(j_cor!=j)
+                y+=abs(j_cor-j);
         }
     }
-
-    return h;
+//total manhattan distance
+    return (x+y);
 }
+
+
 int getH(int a[dim][dim]){
     int h=0;
 
@@ -262,7 +275,6 @@ vector<Node> getNeighbors(Node n){
 void GeneralSearch(int (puzzle)[dim][dim]){
     Node initial_state;
     priority_queue<Node> frontier;
-    //set<int[dim][dim]> explored;
     vector<Node> explored;
     vector<Node> front_copy;
     int count=0;
@@ -336,6 +348,8 @@ void search_init(int puzzle[dim][dim], int alg_choice){
         for(int j=0; j<dim; j++){
             if (count<(puzzle_size+1)){
                 goal[i][j]= count;
+                goal_pos[count].first=i;
+                goal_pos[count].second=j;
                 count++;
             }
             else
