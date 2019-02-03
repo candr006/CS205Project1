@@ -6,6 +6,8 @@ using namespace std;
 const int puzzle_size=8;
 //array dimensions
 const int dim=((puzzle_size)/2)-1;
+int alg_choice=0;
+int goal[dim][dim];
 
 int debugnode[dim][dim]={
         {1,2,3},
@@ -30,6 +32,8 @@ bool checkStatesEqual(int (a)[3][3], int (b)[3][3]){
 struct Node{
     int state[dim][dim];
     int f=0;
+    int g=0;
+    int h=0;
     //keep track of where the blank is
     pair<int,int> pos_blank;
     //Add comparator to enable priority queue sorting by f
@@ -67,6 +71,8 @@ pair<int,int> setStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
 void setNodesEqual(Node &a, Node b){
     setStatesEqual(a.state,b.state);
     a.f=b.f;
+    a.g=b.g;
+    a.h=b.h;
 
     return;
 }
@@ -124,9 +130,55 @@ priority_queue<Node> deleteFromQueue(priority_queue<Node> a, Node n){
 
     return b;
 }
+int getMisplacedTiles(int a[dim][dim]){
+    int h=0;
+
+    for( int i=0; i<dim; i++){
+        for(int j=0; j<dim; j++){
+            if(a[i][j]!=goal[i][j]){
+                h++;
+            }
+        }
+    }
+
+    return h;
+}
+
+int getManhattanDistance(int a[dim][dim]){
+    int h=0;
+
+    for( int i=0; i<dim; i++){
+        for(int j=0; j<dim; j++){
+            if(a[i][j]!=goal[i][j]){
+                h++;
+            }
+        }
+    }
+
+    return h;
+}
+int getH(int a[dim][dim]){
+    int h=0;
+
+    switch(alg_choice){
+        //Uniform cost search has h set to 0
+        case 1:
+            break;
+        case 2:
+            //calculate number of misplaced tiles
+            h=getMisplacedTiles(a);
+            break;
+        case 3:
+            h=getManhattanDistance(a);
+            break;
+    };
+
+    return h;
+
+}
 
 //this function returns the neighbor of the state passed in with the blank moved
-Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int f){
+Node GenNeighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int g){
     int temp[dim][dim];
     Node n;
     pair<int,int> bpos= setStatesEqual(temp,a);
@@ -135,7 +187,9 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)-1][bpos.second]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.f=f+1;
+        n.g=g+1;
+        n.h=getH(a);
+        n.f=(n.g+n.h);
         return n;
 
     }
@@ -144,7 +198,9 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)+1][bpos.second]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.f=f+1;
+        n.g=g+1;
+        n.h=getH(a);
+        n.f=(n.g+n.h);
         return n;
     }
     else if(movement=="right"){
@@ -152,7 +208,9 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)][(bpos.second)+1]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.f=f+1;
+        n.g=g+1;
+        n.h=getH(a);
+        n.f=(n.g+n.h);
         return n;
     }
     else if(movement=="left"){
@@ -160,11 +218,16 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)][(bpos.second)-1]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.f=f+1;
+        n.g=g+1;
+        n.h=getH(a);
+        n.f=(n.g+n.h);
         return n;
     }
     return n;
 }
+
+
+
 
 
 //this function returns all possible neighbors of the node passed in
@@ -174,29 +237,29 @@ vector<Node> getNeighbors(Node n){
     //printState(n.state," Parent:");
     if(n.pos_blank.first>0) {
         //move blank up possible
-        Node neighbor=gen_neighbor("up", n.state, n.pos_blank, n.f);
+        Node neighbor=GenNeighbor("up", n.state, n.pos_blank, n.g);
         neighbors.push_back(neighbor);
     }
     if(n.pos_blank.first<(dim-1)) {
         //move down up possible
-        Node neighbor=gen_neighbor("down", n.state, n.pos_blank, n.f);
+        Node neighbor=GenNeighbor("down", n.state, n.pos_blank, n.g);
         neighbors.push_back(neighbor);
     }
 
     if(n.pos_blank.second>0) {
         //move left up possible
-        Node neighbor=gen_neighbor("left", n.state, n.pos_blank, n.f);
+        Node neighbor=GenNeighbor("left", n.state, n.pos_blank, n.g);
         neighbors.push_back(neighbor);
     }
     if(n.pos_blank.second<(dim-1)) {
         //move right up possible
-        Node neighbor=gen_neighbor("right", n.state, n.pos_blank, n.f);
+        Node neighbor=GenNeighbor("right", n.state, n.pos_blank, n.g);
         neighbors.push_back(neighbor);
     }
     return neighbors;
 }
 
-void GeneralSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
+void GeneralSearch(int (puzzle)[dim][dim]){
     Node initial_state;
     priority_queue<Node> frontier;
     //set<int[dim][dim]> explored;
@@ -232,7 +295,7 @@ void GeneralSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         //otherwise, add the state to those that have been explored
         explored.push_back(n);
         count++;
-        printState(n.state,"Step "+to_string(count)+" expanding with Path Cost "+to_string(n.f));
+        printState(n.state,"Step "+to_string(count)+" expanding with Path Cost (f) "+to_string(n.f));
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
@@ -269,7 +332,6 @@ void GeneralSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
 void search_init(int puzzle[dim][dim], int alg_choice){
     //goal state
     int count=1;
-    int goal[dim][dim];
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if (count<(puzzle_size+1)){
@@ -282,13 +344,8 @@ void search_init(int puzzle[dim][dim], int alg_choice){
         }
     }
 
+    GeneralSearch(puzzle);
 
-
-    switch(alg_choice){
-        case 1:
-            GeneralSearch(puzzle,goal);
-            break;
-    };
 
     return;
 }
@@ -308,7 +365,6 @@ int main(){
     }else{
         //Enter own puzzle
         int rowinput;
-        int alg_choice;
 
         cout << "Enter your puzzle, use a zero to represent the blank" 	<< endl;
         cout << "Enter the first row, use a space or tabs between numbers" << endl;
