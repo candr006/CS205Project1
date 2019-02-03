@@ -26,15 +26,15 @@ bool checkStatesEqual(int (a)[3][3], int (b)[3][3]){
 }
 
 
-//Node struct has state and path_cost values
+//Node struct has state and f, g, h values
 struct Node{
     int state[dim][dim];
-    int path_cost=0;
+    int f=0;
     //keep track of where the blank is
     pair<int,int> pos_blank;
-    //Add comparator to enable priority queue sorting by path_cost
+    //Add comparator to enable priority queue sorting by f
     bool operator<(const Node& b)const {
-        return this->path_cost>b.path_cost;
+        return this->f>b.f;
     }
 
 };
@@ -66,7 +66,7 @@ pair<int,int> setStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
 
 void setNodesEqual(Node &a, Node b){
     setStatesEqual(a.state,b.state);
-    a.path_cost=b.path_cost;
+    a.f=b.f;
 
     return;
 }
@@ -126,7 +126,7 @@ priority_queue<Node> deleteFromQueue(priority_queue<Node> a, Node n){
 }
 
 //this function returns the neighbor of the state passed in with the blank moved
-Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int path_cost){
+Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int f){
     int temp[dim][dim];
     Node n;
     pair<int,int> bpos= setStatesEqual(temp,a);
@@ -135,7 +135,7 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)-1][bpos.second]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.path_cost=path_cost+1;
+        n.f=f+1;
         return n;
 
     }
@@ -144,7 +144,7 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)+1][bpos.second]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.path_cost=path_cost+1;
+        n.f=f+1;
         return n;
     }
     else if(movement=="right"){
@@ -152,7 +152,7 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)][(bpos.second)+1]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.path_cost=path_cost+1;
+        n.f=f+1;
         return n;
     }
     else if(movement=="left"){
@@ -160,7 +160,7 @@ Node gen_neighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int 
         temp[(bpos.first)][(bpos.second)-1]=0;
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
-        n.path_cost=path_cost+1;
+        n.f=f+1;
         return n;
     }
     return n;
@@ -174,29 +174,29 @@ vector<Node> getNeighbors(Node n){
     //printState(n.state," Parent:");
     if(n.pos_blank.first>0) {
         //move blank up possible
-        Node neighbor=gen_neighbor("up", n.state, n.pos_blank, n.path_cost);
+        Node neighbor=gen_neighbor("up", n.state, n.pos_blank, n.f);
         neighbors.push_back(neighbor);
     }
     if(n.pos_blank.first<(dim-1)) {
         //move down up possible
-        Node neighbor=gen_neighbor("down", n.state, n.pos_blank, n.path_cost);
+        Node neighbor=gen_neighbor("down", n.state, n.pos_blank, n.f);
         neighbors.push_back(neighbor);
     }
 
     if(n.pos_blank.second>0) {
         //move left up possible
-        Node neighbor=gen_neighbor("left", n.state, n.pos_blank, n.path_cost);
+        Node neighbor=gen_neighbor("left", n.state, n.pos_blank, n.f);
         neighbors.push_back(neighbor);
     }
     if(n.pos_blank.second<(dim-1)) {
         //move right up possible
-        Node neighbor=gen_neighbor("right", n.state, n.pos_blank, n.path_cost);
+        Node neighbor=gen_neighbor("right", n.state, n.pos_blank, n.f);
         neighbors.push_back(neighbor);
     }
     return neighbors;
 }
 
-void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
+void GeneralSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
     Node initial_state;
     priority_queue<Node> frontier;
     //set<int[dim][dim]> explored;
@@ -232,7 +232,7 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
         //otherwise, add the state to those that have been explored
         explored.push_back(n);
         count++;
-        printState(n.state,"Step "+to_string(count)+" expanding with Path Cost "+to_string(n.path_cost));
+        printState(n.state,"Step "+to_string(count)+" expanding with Path Cost "+to_string(n.f));
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
@@ -244,7 +244,7 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
             }
             if(existsInVect(front_copy,neighbors[i]) && (!existsInVect(explored,neighbors[i]))){
                 Node t=getNode(front_copy,neighbors[i]);
-                if(t.path_cost>neighbors[i].path_cost){
+                if(t.f>neighbors[i].f){
                     frontier=deleteFromQueue(frontier,t);
                     frontier.push(neighbors[i]);
                     Node t=getNode(front_copy,t,true);
@@ -265,7 +265,8 @@ void UniformCostSearch(int (puzzle)[dim][dim], int (goal)[dim][dim]){
 
 }
 
-void general_search(int puzzle[dim][dim], int alg_choice){
+
+void search_init(int puzzle[dim][dim], int alg_choice){
     //goal state
     int count=1;
     int goal[dim][dim];
@@ -285,7 +286,7 @@ void general_search(int puzzle[dim][dim], int alg_choice){
 
     switch(alg_choice){
         case 1:
-            UniformCostSearch(puzzle,goal);
+            GeneralSearch(puzzle,goal);
             break;
     };
 
@@ -335,8 +336,8 @@ int main(){
         cin>>alg_choice;
 
 
-        //general_search call with algorithm choice passed in
-        general_search(puzzleinput,alg_choice);
+        //search_init call with algorithm choice passed in
+        search_init(puzzleinput,alg_choice);
 
 
     }
