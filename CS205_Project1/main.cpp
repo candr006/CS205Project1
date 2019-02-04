@@ -141,16 +141,25 @@ priority_queue<Node> deleteFromQueue(priority_queue<Node> a, Node n){
 
 int getMisplacedTiles(int a[dim][dim]){
     int h=0;
+    int val;
+    int i_cor;
+    int j_cor;
     //loop through the state passed in and count how many tiles
     // don't match the goal state
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
-            if(a[i][j]!=goal[i][j]){
-                h++;
+            val=a[i][j];
+            if (val!=0) {
+                //store the correct i and j positions of the value
+                i_cor = goal_pos[val].first;
+                j_cor = goal_pos[val].second;
+                //calculate the difference between the correct values of i, j and the the current positions of the values
+                if ((i_cor != i) || (j_cor != j)) {
+                   h++;
+                }
             }
         }
     }
-
     return h;
 }
 
@@ -168,10 +177,12 @@ int getManhattanDistance(int a[dim][dim]){
                 i_cor = goal_pos[val].first;
                 j_cor = goal_pos[val].second;
                 //calculate the difference between the correct values of i, j and the the current positions of the values
-                if (i_cor != i)
-                    x += abs(i_cor - i);
-                if (j_cor != j)
-                    y += abs(j_cor - j);
+                if (i_cor != i) {
+                    x = (x+ abs(i_cor - i));
+                }
+                if (j_cor != j) {
+                    y = (y+ abs(j_cor - j));
+                }
             }
         }
     }
@@ -212,7 +223,7 @@ Node GenNeighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int g
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
         n.g=g+1;
-        n.h=getH(a);
+        n.h=getH(n.state);
         n.f=(n.g+n.h);
         return n;
 
@@ -223,7 +234,7 @@ Node GenNeighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int g
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
         n.g=g+1;
-        n.h=getH(a);
+        n.h=getH(n.state);
         n.f=(n.g+n.h);
         return n;
     }
@@ -233,7 +244,7 @@ Node GenNeighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int g
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
         n.g=g+1;
-        n.h=getH(a);
+        n.h=getH(n.state);
         n.f=(n.g+n.h);
         return n;
     }
@@ -243,7 +254,7 @@ Node GenNeighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int g
         bpos= setStatesEqual(n.state,temp);
         n.pos_blank=bpos;
         n.g=g+1;
-        n.h=getH(a);
+        n.h=getH(n.state);
         n.f=(n.g+n.h);
         return n;
     }
@@ -310,8 +321,8 @@ void GeneralSearch(int (puzzle)[dim][dim]){
         }while(existsInVect(explored,n));
         //if the state that was popped is equal to the goal state, then we are done
         if(checkStatesEqual(n.state,goal)){
-            printState(goal,"Solution: ");
-            cout<< "Solution Found in Steps: " << count<< endl;
+            cout << "GOAL!!!" << endl;
+            cout<< "Expanded Nodes (incl goal): " << (count+1)<< endl;
             cout << "Solution Depth: " << n.g << endl;
             cout << "Max Queue Size At Any Point: " << max_queue_size << endl;
             return;
@@ -375,10 +386,7 @@ void searchInit(int puzzle[dim][dim], int alg_choice){
 
         }
     }
-
     GeneralSearch(puzzle);
-
-
     return;
 }
 
