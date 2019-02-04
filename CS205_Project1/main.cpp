@@ -10,6 +10,8 @@ int alg_choice=0;
 //Goal state and correct position of values are global variables
 int goal[dim][dim];
 pair<int,int> goal_pos[(dim*dim)];
+//max queue size
+int max_queue_size=0;
 
 //This is the default puzzle if the user doesn't enter their own
 int default_puzzle[dim][dim]={
@@ -160,16 +162,17 @@ int getManhattanDistance(int a[dim][dim]){
     int y=0;
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
-
             val=a[i][j];
-            //store the correct i and j positions of the value
-            i_cor=goal_pos[val].first;
-            j_cor=goal_pos[val].second;
-            //calculate the difference between the correct values of i, j and the the current positions of the values
-            if(i_cor!=i)
-                x+= abs(i_cor-i);
-            if(j_cor!=j)
-                y+=abs(j_cor-j);
+            if (val!=0) {
+                //store the correct i and j positions of the value
+                i_cor = goal_pos[val].first;
+                j_cor = goal_pos[val].second;
+                //calculate the difference between the correct values of i, j and the the current positions of the values
+                if (i_cor != i)
+                    x += abs(i_cor - i);
+                if (j_cor != j)
+                    y += abs(j_cor - j);
+            }
         }
     }
 //total manhattan distance
@@ -289,6 +292,7 @@ void GeneralSearch(int (puzzle)[dim][dim]){
     //set initial Node state to the puzzle
     pair<int,int> pblank = setStatesEqual(initial_state.state,puzzle);
     initial_state.pos_blank=pblank;
+    initial_state.h=getH(initial_state.state);
 
     //Add initial_state to frontier priority queue
     frontier.push(initial_state);
@@ -304,26 +308,27 @@ void GeneralSearch(int (puzzle)[dim][dim]){
             frontier.pop();
             getNode(front_copy,n,true);
         }while(existsInVect(explored,n));
-
         //if the state that was popped is equal to the goal state, then we are done
         if(checkStatesEqual(n.state,goal)){
             printState(goal,"Solution: ");
-            cout<< "Solution Found in " << count<< " steps" << endl;
+            cout<< "Solution Found in Steps: " << count<< endl;
+            cout << "Solution Depth: " << n.g << endl;
+            cout << "Max Queue Size At Any Point: " << max_queue_size << endl;
             return;
         }
         //otherwise, add the state to those that have been explored
         explored.push_back(n);
         count++;
-        printState(n.state,"Step "+to_string(count)+" expanding with Path Cost (f) "+to_string(n.f));
+        printState(n.state,"Step "+to_string(count)+" expanding with g(n)="+to_string(n.g)+" and h(n)="+to_string(n.h));
 
         //find all neighbors of current state, n (max 4)
         //possible actions are move up, down, left, right
         vector<Node>neighbors=getNeighbors(n);
         for(int i=0; i<neighbors.size(); i++){
-
             //If this neighbor has not been explored and is not in the frontier, add it to frontier
             if((!existsInVect(explored,neighbors[i])) && (!existsInVect(front_copy,neighbors[i]))){
                 frontier.push(neighbors[i]);
+                max_queue_size=(frontier.size()>max_queue_size)?frontier.size():max_queue_size;
             }
             //If the node already exists in the frontier with a smaller f value, then delete it from the
             //frontier and replace it with the node that has a lower f
@@ -334,6 +339,7 @@ void GeneralSearch(int (puzzle)[dim][dim]){
                     frontier.push(neighbors[i]);
                     Node t=getNode(front_copy,t,true);
                     front_copy.push_back(neighbors[i]);
+                    max_queue_size=(frontier.size()>max_queue_size)?frontier.size():max_queue_size;
                 }
             }
         }
