@@ -7,15 +7,18 @@ const int puzzle_size=8;
 //array dimensions
 const int dim=((puzzle_size)/2)-1;
 int alg_choice=0;
+//Goal state and correct position of values are global variables
 int goal[dim][dim];
 pair<int,int> goal_pos[(dim*dim)];
 
+//This is the default puzzle if the user doesn't enter their own
 int default_puzzle[dim][dim]={
         {1,2,3},
         {5,6,8},
         {4,7,0}
 };
 
+//Return true if the two states are equal
 bool checkStatesEqual(int (a)[dim][dim], int (b)[dim][dim]){
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
@@ -43,15 +46,10 @@ struct Node{
     }
 
 };
-struct NodeCompare
-{
-    bool operator()(const Node& a, const Node& b)
-    {
-        int l=a.pos_blank.first+a.pos_blank.second;
-        int r=b.pos_blank.first+b.pos_blank.second;
-    }
-};
 
+
+//Set two states equal to each other
+//returns the position of the blank
 pair<int,int> setStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
     pair<int,int> pos_blank;
     for( int i=0; i<dim; i++){
@@ -68,7 +66,7 @@ pair<int,int> setStatesEqual(int (&a)[dim][dim], int (b)[dim][dim]){
     return pos_blank;
 }
 
-
+//Sets two nodes equal to each other
 void setNodesEqual(Node &a, Node b){
     setStatesEqual(a.state,b.state);
     a.f=b.f;
@@ -78,6 +76,7 @@ void setNodesEqual(Node &a, Node b){
     return;
 }
 
+//Helper function that prints out a state
 void printState(int a[dim][dim], string message){
     string space="";
     cout << message << endl;
@@ -93,6 +92,8 @@ void printState(int a[dim][dim], string message){
     return;
 }
 
+//Helper function that returns true if the Node is in the vector specified
+//Only compares states, not f, g, and h values
 bool existsInVect(vector<Node> a, Node n){
     for(int i =0; i<a.size(); i++){
         Node b=a[i];
@@ -103,6 +104,9 @@ bool existsInVect(vector<Node> a, Node n){
     return false;
 }
 
+//Helper function that finds and returns a Node in the vector passed in
+//If the bool delete_it is true, then the Node will also be deleted from
+//the vector
 Node getNode(vector<Node> a, Node n, bool delete_it=false){
 
     for(int i =0; i<a.size(); i++){
@@ -118,6 +122,7 @@ Node getNode(vector<Node> a, Node n, bool delete_it=false){
     return t;
 }
 
+//Helper function that deletes a Node from the queue
 priority_queue<Node> deleteFromQueue(priority_queue<Node> a, Node n){
     priority_queue<Node> b;
 
@@ -131,9 +136,11 @@ priority_queue<Node> deleteFromQueue(priority_queue<Node> a, Node n){
 
     return b;
 }
+
 int getMisplacedTiles(int a[dim][dim]){
     int h=0;
-
+    //loop through the state passed in and count how many tiles
+    // don't match the goal state
     for( int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if(a[i][j]!=goal[i][j]){
@@ -182,6 +189,7 @@ int getH(int a[dim][dim]){
             h=getMisplacedTiles(a);
             break;
         case 3:
+            //calculate Manhattan Distance
             h=getManhattanDistance(a);
             break;
     };
@@ -247,7 +255,6 @@ Node GenNeighbor(string movement, int (a)[dim][dim], pair<int, int> b_pos, int g
 //only legal moves are considered
 vector<Node> getNeighbors(Node n){
     vector<Node> neighbors;
-    //printState(n.state," Parent:");
     if(n.pos_blank.first>0) {
         //move blank up possible
         Node neighbor=GenNeighbor("up", n.state, n.pos_blank, n.g);
@@ -289,7 +296,7 @@ void GeneralSearch(int (puzzle)[dim][dim]){
 
 
     do {
-        //Lowest cost Node
+        //Lowest cost Node based on f
         Node n;
         set<Node, std::less<Node>, std::allocator<Node>>::iterator it;
         do {
@@ -314,9 +321,12 @@ void GeneralSearch(int (puzzle)[dim][dim]){
         vector<Node>neighbors=getNeighbors(n);
         for(int i=0; i<neighbors.size(); i++){
 
+            //If this neighbor has not been explored and is not in the frontier, add it to frontier
             if((!existsInVect(explored,neighbors[i])) && (!existsInVect(front_copy,neighbors[i]))){
                 frontier.push(neighbors[i]);
             }
+            //If the node already exists in the frontier with a smaller f value, then delete it from the
+            //frontier and replace it with the node that has a lower f
             if(existsInVect(front_copy,neighbors[i]) && (!existsInVect(explored,neighbors[i]))){
                 Node t=getNode(front_copy,neighbors[i]);
                 if(t.f>neighbors[i].f){
@@ -341,9 +351,11 @@ void GeneralSearch(int (puzzle)[dim][dim]){
 }
 
 
-void search_init(int puzzle[dim][dim], int alg_choice){
+void searchInit(int puzzle[dim][dim], int alg_choice){
     //goal state
     int count=1;
+    //generate the goal state as well as store what the correct position
+    //of each value is - this will help calculate Manhattan Distance
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
             if (count<(puzzle_size+1)){
@@ -375,6 +387,14 @@ int main(){
 
     if(userchoice==1){
         //default puzzle
+        cout <<"Enter your choice of algorithm\n"
+               "1.\tUniform Cost Search\n"
+               "2.\tA* with the Misplaced Tile heuristic.\n"
+               "3.\tA* with the Manhattan distance heuristic.\n";
+        cin>>alg_choice;
+
+        //search_init call with algorithm choice passed in
+        searchInit(default_puzzle,alg_choice);
 
     }else{
         //Enter own puzzle
@@ -407,7 +427,7 @@ int main(){
 
 
         //search_init call with algorithm choice passed in
-        search_init(puzzleinput,alg_choice);
+        searchInit(puzzleinput,alg_choice);
 
 
     }
